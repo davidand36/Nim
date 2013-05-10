@@ -1,0 +1,3 @@
+[submodule "EpsDel"]
+	path = EpsDel
+	url = https://github.com/davidand36/EpsilonDeltaJS.git

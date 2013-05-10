@@ -1,0 +1,21 @@
+@font-face {
+    font-family: 'Text';
+    src: url('fonts/capriola-regular-webfont.eot');
+    src: url('fonts/capriola-regular-webfont.eot?#iefix') format('embedded-opentype'),
+         url('fonts/capriola-regular-webfont.woff') format('woff'),
+         url('fonts/capriola-regular-webfont.ttf') format('truetype'),
+         url('fonts/capriola-regular-webfont.svg#CapriolaRegular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Logo';
+    src: url('fonts/diplomata-regular.eot');
+    src: url('fonts/diplomata-regular.eot') format('embedded-opentype'),
+         url('fonts/diplomata-regular.woff') format('woff'),
+         url('fonts/diplomata-regular.ttf') format('truetype'),
+         url('fonts/diplomata-regular.svg#DiplomataRegular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
