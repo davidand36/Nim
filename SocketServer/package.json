@@ -6,11 +6,9 @@
         "name": "David M. Anderon",
         "email": "dma@EpsilonDelta.us",
         "url": "http://EpsilonDelta.us" },
-    /*
     "repository": {
         "type": "git",
         "url": "https://github.com/davidand36/Nim.git" },
-    */
     "engines": {
         "node": ">= 0.6.0" },
     "dependencies": {
