@@ -1,2 +1,4 @@
 SourceArt/
 SocketServer/node_modules/
+Twitter/node_modules/
+Twitter/OAuth*.json
