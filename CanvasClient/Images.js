@@ -18,52 +18,71 @@ app.images =
      {
     //-------------------------------------------------------------------------
 
-         var images =
-             {
-                 'counter': {
-                     image: null,
-                     url: 'NazarBoncuk_104x100.png'
-                 }
-             },
+         var images = { },
              imageDir = 'images/';
 
     //=========================================================================
 
-         function load( name, callback, forceReload )
+         function load( name, filename, forceReload )
          {
-             var img;
-             if ( images[ (name) ].image && (! forceReload) )
+             var img,
+                 dfd = $.Deferred();
+             if ( images[ (name) ] && (! forceReload) )
              {
-                 if ( callback )
-                     callback( );
+                 dfd.resolve( images[ (name) ] );
              }
-             img = $('<img />');
-             img.on( 'load',
-                     function handleImageLoad( )
-                     {
-                         images[ (name) ].image = img[0];
-                         if ( callback )
-                             callback( );
-                     } );
-             img[0].src = imageDir + images[ (name) ].url;
+             else
+             {
+                 img = document.createElement( 'img' );
+                 $(img).on( 'load',
+                         function handleImageLoad( )
+                         {
+                             images[ (name) ] = img;
+                             dfd.resolve( img );
+                         } )
+                     .error( function( )
+                             {
+                                 dfd.reject( { name: name,
+                                               filename: filename } );
+                             } );
+                 img.src = imageDir + filename;
+             }
+             return dfd.promise();
          }
 
     //-------------------------------------------------------------------------
 
-         function loadAll( name, callback, forceReload )
+         function loadList( list, forceReload )
          {
-             _.each( images,
-                     function handleImage( imgData, name )
-                     {
-                         load( name, callback, forceReload );
-                     } );
+             var i, numImages = list.length,
+                 imgData, name, filename,
+                 promises = [];
+             for ( i = 0; i < numImages; ++i )
+             {
+                 imgData = list[ i ];
+                 if ( εδ.util.isArray( imgData ) )
+                 {
+                     name = imgData[ 0 ];
+                     filename = imgData[ 1 ];
+                 }
+                 else
+                 {
+                     name = imgData.name;
+                     filename = imgData.filename;
+                 }
+                 if ( name && filename )
+                 {
+                     promises.push( load( name, filename, forceReload ) );
+                 }
+             }
+             return promises;
          }
 
     //=========================================================================
 
          function getSize( name )
          {
-             var img = images[ (name) ].image;
+             var img = images[ (name) ];
              if ( img === null )
                  return null;
              return {
@@ -76,7 +95,7 @@ app.images =
 
          function draw( ctx, name, x, y, scale )
          {
-             var img = images[ (name) ].image;
+             var img = images[ (name) ];
              scale = scale || 1;
              if ( scale === 1 )
              {
@@ -94,7 +113,7 @@ app.images =
 
          return {
              load: load,
-             loadAll: loadAll,
+             loadList: loadList,
              getSize: getSize,
              draw: draw
          };

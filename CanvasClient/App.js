@@ -15,6 +15,7 @@ var app = app || { };
 
 app.start = function( )
 {
+    var promises = [];
     εδ.errorHandler.setMessageElement( $("#errorMessageDiv") );
     εδ.storage.setPrefix( "Coloris_" );
     εδ.storage.get( "settings", processSettings );
@@ -23,7 +24,9 @@ app.start = function( )
     {
         app.socket = io.connect( );
     }
-    app.showScreen( "splash", app.loader.getResourceLoadProgress );
+    promises = promises.concat( app.loader.loadSecondScripts( ) );
+    promises = promises.concat( app.loader.loadImages( ) );
+    app.showScreen( "splash", promises );
 
     //-------------------------------------------------------------------------
 

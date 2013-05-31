@@ -19,9 +19,9 @@ app.screens[ 'splash' ] =
      {
     //-------------------------------------------------------------------------
 
-         var getProgressFn,
-             minScreenTime = 2.0, //Minimum time on this screen (sec)
-             splashDone, progressDone,
+         var minScreenTime = 2.0, //Minimum time on this screen (sec)
+             screenPromise,
+             numPromises, promisesResolved,
              nextScreen = 'nim',
              canvas, ctx,
              gfx,
@@ -30,13 +30,10 @@ app.screens[ 'splash' ] =
 
     //=========================================================================
 
-         function run( getProgress )
+         function run( promises )
          {
-             getProgressFn = getProgress;
-             splashDone = false;
-             progressDone = false;
+             setupPromises( promises );
              setupScreen( );
-             setTimeout( setSplashDone, minScreenTime * 1000 );
              εδ.displayLoop.setUpdateFunction( updateProgress );
          }
          
@@ -64,6 +61,48 @@ app.screens[ 'splash' ] =
          function resize( )
          {
              setupScreen( );
+         }
+
+    //=========================================================================
+
+         function setupPromises( promises )
+         {
+             var i;
+             setupScreenPromise( );
+             numPromises = promises.length;
+             promisesResolved = 0;
+             for ( i = 0; i < numPromises; ++i )
+             {
+                 promises[ i ].done(
+                     function( )
+                     {
+                         ++promisesResolved;
+                     } );
+             }
+             setAllDone( promises );
+         }
+
+    //-------------------------------------------------------------------------
+
+         function setupScreenPromise( )
+         {
+             var screenDeferred = $.Deferred();
+             εδ.deferred.resolveOnTimeout( screenDeferred, minScreenTime );
+             screenPromise = screenDeferred.promise();
+         }
+
+    //-------------------------------------------------------------------------
+
+         function setAllDone( promises )
+         {
+             var allPromises = [];
+             allPromises = allPromises.concat( promises );
+             allPromises = allPromises.concat( screenPromise );
+             εδ.deferred.whenAll( allPromises ).done(
+                 function( )
+                 {
+                     app.showScreen( nextScreen );
+                 } );
          }
 
     //=========================================================================
@@ -102,31 +141,11 @@ app.screens[ 'splash' ] =
 
     //=========================================================================
 
-         function setSplashDone( )
-         {
-             splashDone = true;
-             if ( progressDone )
-             {
-                 app.showScreen( nextScreen );
-             }
-         }
-
-    //=========================================================================
-
          function updateProgress( )
          {
-             var progress = getProgressFn( );
-             if ( progressDone )
-                 return;
-             if ( progress < 1 )
-             {
-                 drawProgress( progress );
-             }
-             else
-             {
-                 drawProgress( 1 );
-                 setTimeout( finishProgress, 100 );
-             }
+             var progress =
+                 (numPromises === 0)  ?  0  :  promisesResolved / numPromises;
+             drawProgress( progress );
          }
 
     //-------------------------------------------------------------------------
@@ -153,17 +172,6 @@ app.screens[ 'splash' ] =
                                     progressRect.width, progressRect.height,
                                     progressRect.radius );
              ctx.restore( );
-         }
-
-    //-------------------------------------------------------------------------
-
-         function finishProgress( )
-         {
-             progressDone = true;
-             if ( splashDone )
-             {
-                 app.showScreen( nextScreen );
-             }
          }
 
     //=========================================================================

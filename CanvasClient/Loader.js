@@ -19,12 +19,7 @@ app.loader =
      {
     //-------------------------------------------------------------------------
 
-         var numResourcesToLoad = 0,
-             numResourcesLoaded = 0;
-         
-    //=========================================================================
-
-         function run( )
+         function loadFirstScripts( )
          {
              var useZepto = ('__proto__' in {}),
                  zjLoad,
@@ -34,6 +29,7 @@ app.loader =
                  [
                      "EpsDel/ErrorHandler.js",
                      "EpsDel/Util.js",
+                     "EpsDel/Deferred.js",
                      "EpsDel/Math.js",
                      "EpsDel/Vector.js",
                      "EpsDel/Random.js",
@@ -50,69 +46,41 @@ app.loader =
                      "BackgroundCanvas.js",
                      "Images.js",
                      "SplashScreen.js"
-                 ],
-                 secondScripts =
-                 [
-                     "NimScreen.js",
-                     "NimModel.js",
-                     "NimCanvasView.js",
-                     "NimOfflineController.js",
-                     "NimSocketController.js",
-                     "NimAI.js",
-                     "NimAudio.js"
-                 ],
-                 secondLoad = secondScripts.concat( listResources( ) );
+                 ];
 
              if ( navigator.onLine )
              {
                  firstScripts.push( "/socket.io/socket.io.js" );
              }
 
-             setResourcePrefix( );
-             
-             numResourcesToLoad = secondLoad.length;
-             numResourcesLoaded = 0;
-
              zjLoad =
                  {
                      test: useZepto,
-                     yep: 'lib/zepto.min.js',
-                     nope: 'lib/jquery.min.js'
+                     yep: [ 'lib/zepto.min.js',
+                            'lib/deferred.min.js' ],
+                     nope: 'lib/jquery.min.js',
+                     complete: function onZjLoad()
+                     {
+                         if ( Zepto )
+                         {
+                             Deferred.installInto( Zepto );
+                         }
+                     }
                  };
              libsLoad =
                  [
                      'lib/underscore-min.js'
                  ];
              
-             Modernizr.load(
+             yepnope(
                  [
                      zjLoad,
                      libsLoad,
                      {
                          load: firstScripts,
-                         complete: function()
+                         complete: function onComplete1stLoad( )
                          {
                              app.start( );
-                         }
-                     },
-                     {
-                         load: secondLoad,
-                         callback: function onEachLoad( url, result, key )
-                         {
-                             ++numResourcesLoaded;
-                         },
-                         complete: function onCompleteLoad()
-                         {
-                             app.images.loadAll(
-                                 function onEachImgLoad( )
-                                 {
-                                     if ( ++numResourcesLoaded >=
-                                          numResourcesToLoad )
-                                     {
-                                         numResourcesToLoad =
-                                             numResourcesLoaded = 0;
-                                     }
-                                 } );
                          }
                      }
                  ]
@@ -121,54 +89,68 @@ app.loader =
 
     //=========================================================================
 
-         function listResources( )
+         function loadScriptsAsPromises( scripts )
          {
-             var resources =
+             var deferreds = { },
+                 i, numScripts = scripts.length,
+                 promises;
+             for ( i = 0; i < numScripts; ++i )
+             {
+                 deferreds[ scripts[ i ] ] = $.Deferred();
+             }
+             yepnope(
                  [
-                     'images/NazarBoncuk_104x100.png'
-                 ],
-                 i, lim;
-
-             for ( i = 0, lim = resources.length; i < lim; ++i )
-             {
-                 resources[ i ] = "resource!" + resources[ i ];
-             }
-             return resources;
-         }
-         
-    //=========================================================================
-
-         function setResourcePrefix( )
-         {
-             yepnope.addPrefix(
-                 "resource",
-                 function( resourceObj )
-                 {
-                     resourceObj.noexec = true;
-                     return resourceObj;
-                 }
+                     {
+                         load: scripts,
+                         callback: function onEach2ndLoad( url, result, key )
+                         {
+                             deferreds[ (url) ].resolve( url );
+                         }
+                     }
+                 ]
              );
+             promises = _.map(
+                 deferreds,
+                 function toPromise( deferred, url )
+                 {
+                     return deferred.promise();
+                 } );
+             return promises;
          }
-         
-    //=========================================================================
 
-         function getResourceLoadProgress( )
+    //-------------------------------------------------------------------------
+
+         function loadSecondScripts( )
          {
-             if ( numResourcesToLoad > 0 )
-             {
-                 return numResourcesLoaded / numResourcesToLoad;
-             }
-             else
-             {
-                 return 1;
-             }
+             var scripts =
+                 [
+                     "NimScreen.js",
+                     "NimModel.js",
+                     "NimCanvasView.js",
+                     "NimOfflineController.js",
+                     "NimSocketController.js",
+                     "NimAI.js",
+                     "NimAudio.js"
+                 ];
+             return loadScriptsAsPromises( scripts );
          }
-         
+
+    //-------------------------------------------------------------------------
+
+         function loadImages( )
+         {
+             var images = [ //[name, fileName]
+                     [ 'counter', 'NazarBoncuk_104x100.png' ]
+                 ];
+             return app.images.loadList( images );
+         }
+
     //=========================================================================
 
          return {
-             run: run,
-             getResourceLoadProgress: getResourceLoadProgress
+             loadFirstScripts: loadFirstScripts,
+             loadSecondScripts: loadSecondScripts,
+             loadImages: loadImages
          };
          
     //-------------------------------------------------------------------------
@@ -179,7 +161,7 @@ app.loader =
 //*****************************************************************************
 
 
-app.loader.run( );
+app.loader.loadFirstScripts( );
 
 
 //*****************************************************************************
