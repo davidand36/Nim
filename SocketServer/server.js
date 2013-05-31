@@ -24,11 +24,12 @@ var httpHandler = connect( )
     .use( connect.static( __dirname + '/public', { redirect: true } ) );
 
 var httpServer = http.createServer( httpHandler ).listen( httpPort );
+console.log( 'Listening on HTTP port ' + httpPort );
 
 //=============================================================================
 
 var io = socketio.listen( httpServer );
-
+io.set( 'log level', 2 );
 io.sockets.on( 'connection',
                function( socket )
                {
