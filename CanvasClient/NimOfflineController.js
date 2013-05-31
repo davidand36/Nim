@@ -15,7 +15,7 @@ app.nim = app.nim || { };
 
 
 app.nim.offlineController =
-    function( model, view )
+    function( model, view, gameTime )
     {
     //-------------------------------------------------------------------------
 
@@ -43,6 +43,7 @@ app.nim.offlineController =
         function clearEventHandlers( )
         {
             $('#game').off( 'click' );
+            //!!!clear timeouts
         }
 
     //=========================================================================
@@ -89,9 +90,10 @@ app.nim.offlineController =
                     move = ai.move( );
                     model.remove( move.pile, move.counters );
                     view.setPiles( model.getPiles() );
-                    view.setMessage( 'Computer takes ' + move.counters +
-                                     ' from pile ' + (move.pile + 1) );
-                    setTimeout( update, 3.0 * 1000 ); //!!!
+                    view.setMove( 'opponent',
+                                  move.pile, move.counters,
+                                  gameTime.getSeconds() );
+                    setTimeout( update, 1.0 * 1000 );
                     break;
                 }
                 break;
@@ -105,7 +107,7 @@ app.nim.offlineController =
                     view.setMessage( 'Sorry. Computer won.' );
                     break;
                 }
-                setTimeout( newGame, 5.0 * 1000 ); //!!!
+                setTimeout( newGame, 5.0 * 1000 );
                 break;
             }
         }
@@ -129,9 +131,12 @@ app.nim.offlineController =
                     counters = piles[ pile ] - loc.counter;
                     if ( counters > 0 )
                     {
-                        model.remove( pile, counters );
                         $('#game').off( 'click' );
-                        setTimeout( update( ), 0.5 * 1000 );
+                        view.setMessage( '' );
+                        model.remove( pile, counters );
+                        view.setMove( 'player', pile, counters,
+                                      gameTime.getSeconds() );
+                        setTimeout( update, 2.0 * 1000 );
                     }
                 }
             }

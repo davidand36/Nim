@@ -25,7 +25,13 @@ app.nim.view =
              pilesLoc,
              messageLoc = {},
              piles = [],
-             messageData = {};
+             messageData = {},
+             moveData = null,
+             moveParams = {
+                 playerFadeDuration: 1.0,
+                 opponentBlinkDuration: 3.0,
+                 opponentBlinkInterval: 0.5
+             };
 
     //=========================================================================
 
@@ -117,6 +123,7 @@ app.nim.view =
          {
              app.background.drawMain( );
              drawPiles( );
+             drawMove( time );
              writeMessage( );
          }
          
@@ -143,6 +150,73 @@ app.nim.view =
                      x = pilesLoc.left  +  c * pilesLoc.spacingH;
                      app.images.draw( ctx, 'counter', x, y, counterScale );
                  }
+             }
+         }
+
+    //=========================================================================
+
+         function setMove( player, pile, counters, time )
+         {
+             moveData = {
+                 player: player,
+                 pile: pile,
+                 counters: counters,
+                 startTime: time
+             };
+         }
+
+    //-------------------------------------------------------------------------
+
+         function drawMove( time )
+         {
+             var elapsed,
+                 blinkCount;
+             if ( ! moveData )
+                 return;
+             elapsed = time - moveData.startTime;
+             if ( moveData.player === 'player' )
+             {
+                 if ( elapsed >= moveParams.playerFadeDuration )
+                 {
+                     moveData = null;
+                     return;
+                 }
+                 ctx.save( );
+                 ctx.globalAlpha =
+                     1.0 - (elapsed / moveParams.playerFadeDuration);
+                 drawRemovedCounters( );
+                 ctx.restore( );
+             }
+             else //opponent
+             {
+                 if ( elapsed >= moveParams.opponentBlinkDuration )
+                 {
+                     moveData = null;
+                     return;
+                 }
+                 blinkCount =
+                     Math.floor( elapsed / moveParams.opponentBlinkInterval );
+                 if ( (blinkCount & 1) === 0 )
+                     return; //counters off
+                 drawRemovedCounters( );
+             }
+         }
+
+    //.........................................................................
+
+         function drawRemovedCounters( )
+         {
+             var c, numCtrs = moveData.counters,
+                 pileCounters = piles[ moveData.pile ],
+                 ctr,
+                 x, y;
+
+             y = pilesLoc.top  +  moveData.pile * pilesLoc.spacingV;
+             for ( c = 0; c < numCtrs; ++c )
+             {
+                 ctr = c + pileCounters;
+                 x = pilesLoc.left  +  ctr * pilesLoc.spacingH;
+                 app.images.draw( ctx, 'counter', x, y, counterScale );
              }
          }
 
@@ -180,6 +254,7 @@ app.nim.view =
              posToLoc: posToLoc,
              update: update,
              setPiles: setPiles,
+             setMove: setMove,
              setMessage: setMessage
          };
          

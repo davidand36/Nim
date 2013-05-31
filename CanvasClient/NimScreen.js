@@ -21,7 +21,7 @@ app.screens[ "nim" ] =
 
          var view,
              controller,
-             timer = εδ.timer( );
+             gameTime = εδ.timer( );
 
     //=========================================================================
 
@@ -33,12 +33,14 @@ app.screens[ "nim" ] =
 
              if ( app.socket )
              {
-                 controller = app.nim.socketController( app.socket, view );
+                 controller = app.nim.socketController( app.socket, view,
+                                                        gameTime );
              }
              else
              {
                  model = app.nim.model( app.settings.rules );
-                 controller = app.nim.offlineController( model, view );
+                 controller = app.nim.offlineController( model, view,
+                                                         gameTime );
              }
 
              view.setup( );
@@ -66,7 +68,7 @@ app.screens[ "nim" ] =
 
          function update( )
          {
-             view.update( timer.getSeconds() );
+             view.update( gameTime.getSeconds() );
          }
 
     //=========================================================================

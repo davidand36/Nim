@@ -10,7 +10,6 @@
 require( './NimModel.js' );
 require( './NimAI.js' );
 require( './EpsDel/Random.js' );
-_ = require( 'underscore' );
 
 global.app = global.app || { };
 var app = global.app;
@@ -35,6 +34,7 @@ app.lobby =
             socket.set( 'player',
                         {
                             id: nextPlayerId++,
+                            type: 'human',
                             socket: socket,
                             status: 'starting'
                         },
@@ -101,6 +101,11 @@ app.lobby =
             console.log( 'Player '+ player.id + ' sent ready' );
             if ( player.status === 'starting' )
             {
+                if ( data && data.name )
+                {
+                    console.log( 'Name: ' + data.name );
+                    player.name = data.name;
+                }
                 player.game = joinGame( player );
                 player.socket.set( 'player', player );
             }
@@ -126,7 +131,7 @@ app.lobby =
             if ( player.status === 'playing' )
             {
                 game = player.game;
-                p = _.indexOf( game.players, player );
+                p = game.players.indexOf( player );
                 if ( p < 0 )
                 {
                     message = 'Player not in game.players';
@@ -143,13 +148,9 @@ app.lobby =
                         result = model.remove( data.pile, data.counters );
                         if ( result )
                         {
-                            message = 'Player ' + (p + 1) + ' removed ' +
-                                data.counters + ' from pile ' + data.pile;
-                            console.log( message );
                             broadcastGameUpdate( game,
                                                  {
                                                      type: 'move',
-                                                     message: message,
                                                      player: p,
                                                      pile: data.pile,
                                                      counters: data.counters
@@ -168,7 +169,7 @@ app.lobby =
             }
             else
             {
-                console.warn( 'player.status not playing' );
+                console.warn( 'player.status !== playing' );
             }
         }
 
@@ -177,9 +178,8 @@ app.lobby =
         function handleNewGame( player )
         {
             var game,
-            model,
-            status,
-            message;
+                model,
+                status;
 
             console.log( 'Player '+ player.id + ' sent new game' );
             if ( player.status === 'playing' )
@@ -190,16 +190,16 @@ app.lobby =
                 if ( status.status === 'winner' )
                 {
                     model.newGame( );
-                    message = 'Starting new game';
-                    console.log( message );
+                    εδ.shuffleArray( game.players );
                     broadcastGameUpdate( game,
                                          {
                                              type: 'new game',
-                                             message: message
+                                             players: listPlayers( game )
                                          } );
                 }
                 else
                 {
+                    console.warn( 'Not starting new game: no winner yet.' );
                 }
             }
             else
@@ -212,32 +212,28 @@ app.lobby =
 
         function handleDisconnect( player )
         {
-            var socket = player.socket,
-                game = player.game,
+            var game = player.game,
                 p,
-                g,
-                message;
+                g;
 
             console.log( 'Player '+ player.id + ' disconnected' );
             player.socket = null;
             if ( game )
             {
                 player.game = null;
-                p = _.indexOf( game.players, player );
+                p = game.players.indexOf( player );
                 game.players.splice( p, 1 );
                 if ( game.players.length === 0 )
                 {
-                    g = _.indexOf( games, game );
+                    g = games.indexOf( game );
                     games.splice( g, 1 );
                 }
                 else
                 {
                     game.status = 'enrolling';
-                    message = 'Player ' + p + ' disconnected';
                     broadcastGameUpdate( game,
                                          {
                                              type: 'disconnect',
-                                             message: message,
                                              player: p
                                          } );
                 }
@@ -251,8 +247,7 @@ app.lobby =
         {
             var g, numGames = games.length,
                 game,
-                p, numPlayers,
-                message;
+                p, numPlayers;
             for ( g = 0; g < numGames; ++g )
             {
                 game = games[ g ];
@@ -271,11 +266,10 @@ app.lobby =
                         {
                             game.players[ p ].status = 'playing';
                         }
-                        message = 'Game started';
                         broadcastGameUpdate( game,
                                              {
                                                  type: 'start game',
-                                                 message: message
+                                                 players: listPlayers( game )
                                              } );
                     }
                     listGames( );
@@ -323,6 +317,33 @@ app.lobby =
                         status: status
                     } );
             }
+        }
+
+    //=========================================================================
+
+        function listPlayers( game )
+        {
+            var names = [],
+                p, numPlayers = game.players.length, player,
+                name;
+            for ( p = 0; p < numPlayers; ++p )
+            {
+                player = game.players[ p ];
+                switch ( player.type )
+                {
+                case 'human':
+                    if ( player.name )
+                        name = player.name;
+                    else
+                        name = 'Player ' + (p + 1);
+                    break;
+                case 'ai':
+                    name = 'AI';
+                    break;
+                }
+                names.push( name );
+            }
+            return names;
         }
 
     //=========================================================================
