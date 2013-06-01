@@ -74,7 +74,7 @@ app.screens[ 'splash' ] =
              for ( i = 0; i < numPromises; ++i )
              {
                  promises[ i ].done(
-                     function( )
+                     function( data )
                      {
                          ++promisesResolved;
                      } );
