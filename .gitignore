@@ -1,4 +1,7 @@
 SourceArt/
 SocketServer/node_modules/
+Facebook/node_modules/
+Facebook/cert.crt
+Facebook/private.key
 Twitter/node_modules/
 Twitter/OAuth*.json

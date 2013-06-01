@@ -1,0 +1,1 @@
+../../CanvasClient/SplashScreen.js
